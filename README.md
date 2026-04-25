@@ -22,27 +22,38 @@
 
 ## 本地运行
 
-1. 安装 Node.js 18+。
-2. 在项目根目录执行：
+1. 安装 Node.js 18+（建议使用 LTS 版本）。
+2. 打开终端，进入项目根目录：
 
+```bash
+cd Hamwiki
 ```
+
+3. 安装依赖：
+
+```bash
 npm install
 ```
 
-3. 启动开发服务器：
-```
+4. 启动开发服务器：
+
+```bash
 npm run dev
 ```
 
+5. 在浏览器访问：
 
+```text
+http://localhost:5173
+```
 
-## 构建产物
+6. 如需构建并本地预览生产版本：
 
-执行：
-
+```bash
 npm run build
+npm run preview
+```
 
-构建结果在 dist 目录。
 
 ## 项目计划
 
