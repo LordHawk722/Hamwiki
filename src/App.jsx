@@ -1,10 +1,28 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import ReactMarkdown from "react-markdown";
+import { wikiCatalog } from "./data/wikiCatalog";
 import { wikiPages } from "./data/wikiPages";
 
 const developmentOrganizations = ["同济大学业余无线电协会", "杭州市艮山中学业余无线电社"];
-const developers = ["BH4HVT"];
+const developers = ["BH4HVT", "BH4GZK"];
 const contributors = ["BG5EVL", "BH8RAK"];
+
+function toHeadingId(text) {
+  const normalized = text
+    .toLowerCase()
+    .trim()
+    .replace(/[\\`*_~\[\](){}<>#.:,;!?/"'|]+/g, "")
+    .replace(/\s+/g, "-");
+
+  return normalized || "section";
+}
+
+function getHeadingText(rawText) {
+  return rawText
+    .replace(/\[(.*?)\]\((.*?)\)/g, "$1")
+    .replace(/[`*_~]+/g, "")
+    .trim();
+}
 
 function includesKeyword(page, keyword) {
   const normalizedKeyword = keyword.trim().toLowerCase();
@@ -12,42 +30,277 @@ function includesKeyword(page, keyword) {
     return true;
   }
 
-  const content = [page.title, page.category, ...(page.tags || []), page.content]
-    .join(" ")
-    .toLowerCase();
+  const content = [page.title, page.content].join(" ").toLowerCase();
 
   return content.includes(normalizedKeyword);
+}
+
+function filterCatalogNodes(nodes, pageById, keyword) {
+  return nodes.reduce((accumulator, node) => {
+    if (Array.isArray(node.children)) {
+      const filteredChildren = filterCatalogNodes(node.children, pageById, keyword);
+      if (filteredChildren.length > 0) {
+        accumulator.push({
+          ...node,
+          children: filteredChildren
+        });
+      }
+      return accumulator;
+    }
+
+    const page = pageById.get(node.pageId);
+    if (page && includesKeyword(page, keyword)) {
+      accumulator.push(node);
+    }
+    return accumulator;
+  }, []);
+}
+
+function collectLeafPageIds(nodes, collector = []) {
+  nodes.forEach((node) => {
+    if (Array.isArray(node.children)) {
+      collectLeafPageIds(node.children, collector);
+      return;
+    }
+
+    if (node.pageId) {
+      collector.push(node.pageId);
+    }
+  });
+
+  return collector;
+}
+
+function countLeafPages(nodes) {
+  return collectLeafPageIds(nodes, []).length;
+}
+
+function collectExpandableIds(nodes, collector = []) {
+  nodes.forEach((node) => {
+    if (Array.isArray(node.children) && node.id) {
+      collector.push(node.id);
+      collectExpandableIds(node.children, collector);
+    }
+  });
+
+  return collector;
+}
+
+function nodeContainsPage(node, targetPageId) {
+  if (!targetPageId) {
+    return false;
+  }
+
+  if (Array.isArray(node.children)) {
+    return node.children.some((child) => nodeContainsPage(child, targetPageId));
+  }
+
+  return node.pageId === targetPageId;
 }
 
 export default function App() {
   const [activeView, setActiveView] = useState("home");
   const [keyword, setKeyword] = useState("");
-  const [selectedCategory, setSelectedCategory] = useState("全部");
   const [selectedPageId, setSelectedPageId] = useState(wikiPages[0]?.id || "");
+  const [expandedNodes, setExpandedNodes] = useState(() => collectExpandableIds(wikiCatalog));
+  const [activeHeadingId, setActiveHeadingId] = useState("");
+  const contentRef = useRef(null);
 
-  const categories = useMemo(
-    () => ["全部", ...new Set(wikiPages.map((page) => page.category))],
-    []
-  );
+  const pageById = useMemo(() => {
+    return new Map(wikiPages.map((page) => [page.id, page]));
+  }, []);
 
-  const filteredPages = useMemo(() => {
-    return wikiPages.filter((page) => {
-      const categoryMatch =
-        selectedCategory === "全部" || page.category === selectedCategory;
-      return categoryMatch && includesKeyword(page, keyword);
-    });
-  }, [keyword, selectedCategory]);
+  const filteredTree = useMemo(() => {
+    return filterCatalogNodes(wikiCatalog, pageById, keyword);
+  }, [keyword, pageById]);
+
+  const visiblePageIds = useMemo(() => collectLeafPageIds(filteredTree, []), [filteredTree]);
 
   useEffect(() => {
-    if (!filteredPages.find((page) => page.id === selectedPageId)) {
-      setSelectedPageId(filteredPages[0]?.id || "");
+    if (!visiblePageIds.includes(selectedPageId)) {
+      setSelectedPageId(visiblePageIds[0] || "");
     }
-  }, [filteredPages, selectedPageId]);
+  }, [visiblePageIds, selectedPageId]);
 
-  const selectedPage =
-    filteredPages.find((page) => page.id === selectedPageId) || filteredPages[0] || null;
+  const selectedPage = pageById.get(selectedPageId) || pageById.get(visiblePageIds[0]) || null;
 
-  const totalCategories = categories.length - 1;
+  const headingSequence = useMemo(() => {
+    if (!selectedPage) {
+      return [];
+    }
+
+    const duplicatedHeadingCounter = new Map();
+
+    return selectedPage.content
+      .split("\n")
+      .map((line, index) => ({ line, lineNumber: index + 1 }))
+      .map(({ line, lineNumber }) => {
+        const match = line.match(/^(#{1,6})\s+(.+)$/);
+        if (!match) {
+          return null;
+        }
+
+        const level = match[1].length;
+        const text = getHeadingText(match[2]);
+        const baseId = toHeadingId(text);
+        const duplicateCount = (duplicatedHeadingCounter.get(baseId) || 0) + 1;
+        duplicatedHeadingCounter.set(baseId, duplicateCount);
+
+        return {
+          id: duplicateCount === 1 ? baseId : `${baseId}-${duplicateCount}`,
+          level,
+          text,
+          lineNumber
+        };
+      })
+      .filter(Boolean);
+  }, [selectedPage]);
+
+  const articleHeadings = useMemo(
+    () => headingSequence.filter((heading) => heading.level >= 2 && heading.level <= 4),
+    [headingSequence]
+  );
+
+  const headingIdByLine = useMemo(
+    () => new Map(headingSequence.map((heading) => [heading.lineNumber, heading.id])),
+    [headingSequence]
+  );
+
+  useEffect(() => {
+    if (articleHeadings.length === 0) {
+      setActiveHeadingId("");
+      return;
+    }
+
+    setActiveHeadingId(articleHeadings[0].id);
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        const visibleEntry = entries
+          .filter((entry) => entry.isIntersecting)
+          .sort((a, b) => a.boundingClientRect.top - b.boundingClientRect.top)[0];
+
+        if (visibleEntry?.target?.id) {
+          setActiveHeadingId(visibleEntry.target.id);
+        }
+      },
+      {
+        root: contentRef.current,
+        rootMargin: "0px 0px -60% 0px",
+        threshold: [0, 1]
+      }
+    );
+
+    articleHeadings.forEach((heading) => {
+      const element = document.getElementById(heading.id);
+      if (element) {
+        observer.observe(element);
+      }
+    });
+
+    return () => observer.disconnect();
+  }, [articleHeadings, selectedPageId]);
+
+  const markdownComponents = useMemo(() => {
+    let fallbackHeadingIndex = 0;
+
+    function createHeadingRenderer(tagName) {
+      const HeadingTag = tagName;
+      return function HeadingRenderer(props) {
+        const { node, ...rest } = props;
+        const lineNumber = node?.position?.start?.line;
+        const lineBasedHeadingId = lineNumber ? headingIdByLine.get(lineNumber) : undefined;
+        let headingId = lineBasedHeadingId;
+
+        if (!headingId && headingSequence[fallbackHeadingIndex]) {
+          headingId = headingSequence[fallbackHeadingIndex].id;
+          fallbackHeadingIndex += 1;
+        }
+
+        return <HeadingTag id={headingId} {...rest} />;
+      };
+    }
+
+    return {
+      h1: createHeadingRenderer("h1"),
+      h2: createHeadingRenderer("h2"),
+      h3: createHeadingRenderer("h3"),
+      h4: createHeadingRenderer("h4"),
+      h5: createHeadingRenderer("h5"),
+      h6: createHeadingRenderer("h6")
+    };
+  }, [headingIdByLine, headingSequence]);
+
+  function toggleNode(nodeId) {
+    setExpandedNodes((current) => {
+      if (current.includes(nodeId)) {
+        return current.filter((item) => item !== nodeId);
+      }
+      return [...current, nodeId];
+    });
+  }
+
+  function renderTreeNode(node, depth = 0) {
+    const isBranch = Array.isArray(node.children);
+
+    if (!isBranch) {
+      const page = pageById.get(node.pageId);
+      if (!page) {
+        return null;
+      }
+
+      const title = node.title || page.title;
+      return (
+        <button
+          key={node.pageId}
+          className={selectedPage?.id === page.id ? "tree-page-item active" : "tree-page-item"}
+          onClick={() => setSelectedPageId(page.id)}
+          type="button"
+        >
+          <span>{title}</span>
+        </button>
+      );
+    }
+
+    const nodeId = node.id || node.title;
+    const isExpanded = expandedNodes.includes(nodeId);
+    const hasActivePage = nodeContainsPage(node, selectedPage?.id);
+    const childCount = countLeafPages(node.children);
+
+    return (
+      <section className={depth === 0 ? "tree-group" : "tree-subgroup"} key={nodeId}>
+        <button
+          type="button"
+          className={hasActivePage ? "tree-group-toggle active" : "tree-group-toggle"}
+          onClick={() => toggleNode(nodeId)}
+        >
+          <span className="tree-group-title">
+            <span className="tree-caret" aria-hidden="true">
+              {isExpanded ? "▾" : "▸"}
+            </span>
+            <span>{node.title}</span>
+          </span>
+          <small className="tree-group-count">{childCount}</small>
+        </button>
+
+        {isExpanded ? (
+          <div className={depth === 0 ? "tree-pages" : "tree-pages tree-pages-nested"}>
+            {node.children.map((child) => renderTreeNode(child, depth + 1))}
+          </div>
+        ) : null}
+      </section>
+    );
+  }
+
+  function jumpToHeading(id) {
+    const element = document.getElementById(id);
+    if (!element) {
+      return;
+    }
+
+    setActiveHeadingId(id);
+    element.scrollIntoView({ behavior: "smooth", block: "start" });
+  }
 
   return (
     <div className="site-shell">
@@ -69,7 +322,7 @@ export default function App() {
             className={activeView === "wiki" ? "nav-btn active" : "nav-btn"}
             onClick={() => setActiveView("wiki")}
           >
-            考点解析
+            考点汇总与解析
           </button>
         </nav>
       </header>
@@ -121,7 +374,7 @@ export default function App() {
         <div className="app-shell">
           <aside className="sidebar panel">
             <div className="brand-block">
-              <h1>业余无线电考试知识点</h1>
+              <h1>考点汇总与解析</h1>
               <p className="muted">基于新版题库和《业余无线电通信》整理</p>
             </div>
 
@@ -133,60 +386,33 @@ export default function App() {
                 onChange={(event) => setKeyword(event.target.value)}
                 placeholder="例如：呼号、天线、电磁兼容"
               />
-
-              <label htmlFor="category">分类筛选</label>
-              <select
-                id="category"
-                value={selectedCategory}
-                onChange={(event) => setSelectedCategory(event.target.value)}
-              >
-                {categories.map((category) => (
-                  <option key={category} value={category}>
-                    {category}
-                  </option>
-                ))}
-              </select>
             </div>
 
             <div className="list-header">
-              <span>条目列表</span>
-              <strong>{filteredPages.length}</strong>
+              <span>板块</span>
+              <strong>
+                {filteredTree.length}/{visiblePageIds.length}
+              </strong>
             </div>
 
-            <nav className="page-list" aria-label="知识点列表">
-              {filteredPages.length === 0 ? (
+            <nav className="category-tree" aria-label="知识点分层导航">
+              {visiblePageIds.length === 0 ? (
                 <p className="empty">没有匹配内容，请调整关键词。</p>
               ) : (
-                filteredPages.map((page) => (
-                  <button
-                    key={page.id}
-                    className={selectedPage?.id === page.id ? "page-item active" : "page-item"}
-                    onClick={() => setSelectedPageId(page.id)}
-                    type="button"
-                  >
-                    <span>{page.title}</span>
-                    <small>{page.category}</small>
-                  </button>
-                ))
+                filteredTree.map((node) => renderTreeNode(node))
               )}
             </nav>
           </aside>
 
-          <main className="content panel">
+          <main className="content panel" ref={contentRef}>
             {selectedPage ? (
               <>
                 <header className="content-header">
-                  <p className="badge">{selectedPage.category}</p>
                   <h2>{selectedPage.title}</h2>
-                  <div className="tag-row">
-                    {selectedPage.tags.map((tag) => (
-                      <span key={tag}>{tag}</span>
-                    ))}
-                  </div>
                 </header>
 
                 <article className="markdown-body">
-                  <ReactMarkdown>{selectedPage.content}</ReactMarkdown>
+                  <ReactMarkdown components={markdownComponents}>{selectedPage.content}</ReactMarkdown>
                 </article>
               </>
             ) : (
@@ -196,6 +422,29 @@ export default function App() {
               </div>
             )}
           </main>
+
+          <aside className="toc panel" aria-label="文章标题导航">
+            {articleHeadings.length === 0 ? (
+              <p className="empty">当前页面暂无可导航的小节标题。</p>
+            ) : (
+              <nav className="toc-list">
+                {articleHeadings.map((heading) => (
+                  <button
+                    key={heading.id}
+                    type="button"
+                    className={
+                      activeHeadingId === heading.id
+                        ? `toc-item level-${heading.level} active`
+                        : `toc-item level-${heading.level}`
+                    }
+                    onClick={() => jumpToHeading(heading.id)}
+                  >
+                    {heading.text}
+                  </button>
+                ))}
+              </nav>
+            )}
+          </aside>
         </div>
       )}
     </div>
