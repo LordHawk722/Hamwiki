@@ -3,7 +3,8 @@ export const wikiCatalog = [
     id: "law-and-policy",
     title: "法律法规",
     children: [
-        { pageId: "cn-radio-control-regulations", title: "中华人民共和国无线电管制规定" }
+        { pageId: "cn-radio-control-regulations", title: "中华人民共和国无线电管制规定" },
+        { pageId: "cn-radio-management-regulations", title: "中华人民共和国无线电管理条例" }
     ]
   },
   {
@@ -38,7 +39,10 @@ export const wikiCatalog = [
       {
         id: "safe-and-emergency",
         title: "安全与应急",
-        children: [{ pageId: "emc-safety" }, { pageId: "emergency-comm" }]
+        children: [
+          { pageId: "emc-safety", title: "电磁兼容与安全" },
+          { pageId: "emergency-comm", title: "应急通信基本原则" }
+        ]
       }
     ]
   },

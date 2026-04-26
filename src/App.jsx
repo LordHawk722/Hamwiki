@@ -103,8 +103,22 @@ export default function App() {
   const [keyword, setKeyword] = useState("");
   const [selectedPageId, setSelectedPageId] = useState(wikiPages[0]?.id || "");
   const [expandedNodes, setExpandedNodes] = useState(() => collectExpandableIds(wikiCatalog));
+  const [articleHeadings, setArticleHeadings] = useState([]);
   const [activeHeadingId, setActiveHeadingId] = useState("");
   const contentRef = useRef(null);
+  const isHeadingJumpingRef = useRef(false);
+  const jumpTargetHeadingIdRef = useRef("");
+  const jumpLockTimerRef = useRef(null);
+
+  function clearHeadingJumpLock() {
+    if (jumpLockTimerRef.current) {
+      window.clearTimeout(jumpLockTimerRef.current);
+      jumpLockTimerRef.current = null;
+    }
+
+    isHeadingJumpingRef.current = false;
+    jumpTargetHeadingIdRef.current = "";
+  }
 
   const pageById = useMemo(() => {
     return new Map(wikiPages.map((page) => [page.id, page]));
@@ -124,55 +138,58 @@ export default function App() {
 
   const selectedPage = pageById.get(selectedPageId) || pageById.get(visiblePageIds[0]) || null;
 
-  const headingSequence = useMemo(() => {
-    if (!selectedPage) {
-      return [];
-    }
-
-    const duplicatedHeadingCounter = new Map();
-
-    return selectedPage.content
-      .split("\n")
-      .map((line, index) => ({ line, lineNumber: index + 1 }))
-      .map(({ line, lineNumber }) => {
-        const match = line.match(/^(#{1,6})\s+(.+)$/);
-        if (!match) {
-          return null;
-        }
-
-        const level = match[1].length;
-        const text = getHeadingText(match[2]);
-        const baseId = toHeadingId(text);
-        const duplicateCount = (duplicatedHeadingCounter.get(baseId) || 0) + 1;
-        duplicatedHeadingCounter.set(baseId, duplicateCount);
-
-        return {
-          id: duplicateCount === 1 ? baseId : `${baseId}-${duplicateCount}`,
-          level,
-          text,
-          lineNumber
-        };
-      })
-      .filter(Boolean);
-  }, [selectedPage]);
-
-  const articleHeadings = useMemo(
-    () => headingSequence.filter((heading) => heading.level >= 2 && heading.level <= 4),
-    [headingSequence]
-  );
-
-  const headingIdByLine = useMemo(
-    () => new Map(headingSequence.map((heading) => [heading.lineNumber, heading.id])),
-    [headingSequence]
-  );
+  useEffect(() => {
+    return () => {
+      clearHeadingJumpLock();
+    };
+  }, []);
 
   useEffect(() => {
-    if (articleHeadings.length === 0) {
+    if (activeView !== "wiki") {
+      clearHeadingJumpLock();
+      return;
+    }
+
+    if (!selectedPage) {
+      clearHeadingJumpLock();
+      setArticleHeadings([]);
       setActiveHeadingId("");
       return;
     }
 
-    setActiveHeadingId(articleHeadings[0].id);
+    const contentElement = contentRef.current;
+    const renderedHeadings = contentElement
+      ? Array.from(contentElement.querySelectorAll(".markdown-body h2, .markdown-body h3, .markdown-body h4"))
+      : [];
+
+    if (renderedHeadings.length === 0) {
+      clearHeadingJumpLock();
+      setArticleHeadings([]);
+      setActiveHeadingId("");
+      return;
+    }
+
+    const duplicatedHeadingCounter = new Map();
+    const nextHeadings = renderedHeadings.map((element) => {
+      const level = Number(element.tagName.replace("H", ""));
+      const text = getHeadingText(element.textContent || "");
+      const baseId = toHeadingId(text);
+      const duplicateCount = (duplicatedHeadingCounter.get(baseId) || 0) + 1;
+      duplicatedHeadingCounter.set(baseId, duplicateCount);
+
+      const id = duplicateCount === 1 ? baseId : `${baseId}-${duplicateCount}`;
+      element.id = id;
+
+      return { id, level, text };
+    });
+
+    setArticleHeadings(nextHeadings);
+    setActiveHeadingId((currentId) => {
+      if (currentId && nextHeadings.some((heading) => heading.id === currentId)) {
+        return currentId;
+      }
+      return nextHeadings[0].id;
+    });
 
     const observer = new IntersectionObserver(
       (entries) => {
@@ -181,7 +198,17 @@ export default function App() {
           .sort((a, b) => a.boundingClientRect.top - b.boundingClientRect.top)[0];
 
         if (visibleEntry?.target?.id) {
-          setActiveHeadingId(visibleEntry.target.id);
+          const visibleHeadingId = visibleEntry.target.id;
+
+          if (isHeadingJumpingRef.current) {
+            if (visibleHeadingId === jumpTargetHeadingIdRef.current) {
+              setActiveHeadingId(visibleHeadingId);
+              clearHeadingJumpLock();
+            }
+            return;
+          }
+
+          setActiveHeadingId(visibleHeadingId);
         }
       },
       {
@@ -191,7 +218,7 @@ export default function App() {
       }
     );
 
-    articleHeadings.forEach((heading) => {
+    nextHeadings.forEach((heading) => {
       const element = document.getElementById(heading.id);
       if (element) {
         observer.observe(element);
@@ -199,37 +226,7 @@ export default function App() {
     });
 
     return () => observer.disconnect();
-  }, [articleHeadings, selectedPageId]);
-
-  const markdownComponents = useMemo(() => {
-    let fallbackHeadingIndex = 0;
-
-    function createHeadingRenderer(tagName) {
-      const HeadingTag = tagName;
-      return function HeadingRenderer(props) {
-        const { node, ...rest } = props;
-        const lineNumber = node?.position?.start?.line;
-        const lineBasedHeadingId = lineNumber ? headingIdByLine.get(lineNumber) : undefined;
-        let headingId = lineBasedHeadingId;
-
-        if (!headingId && headingSequence[fallbackHeadingIndex]) {
-          headingId = headingSequence[fallbackHeadingIndex].id;
-          fallbackHeadingIndex += 1;
-        }
-
-        return <HeadingTag id={headingId} {...rest} />;
-      };
-    }
-
-    return {
-      h1: createHeadingRenderer("h1"),
-      h2: createHeadingRenderer("h2"),
-      h3: createHeadingRenderer("h3"),
-      h4: createHeadingRenderer("h4"),
-      h5: createHeadingRenderer("h5"),
-      h6: createHeadingRenderer("h6")
-    };
-  }, [headingIdByLine, headingSequence]);
+  }, [activeView, selectedPageId, selectedPage?.content]);
 
   function toggleNode(nodeId) {
     setExpandedNodes((current) => {
@@ -297,6 +294,15 @@ export default function App() {
     if (!element) {
       return;
     }
+
+    isHeadingJumpingRef.current = true;
+    jumpTargetHeadingIdRef.current = id;
+    if (jumpLockTimerRef.current) {
+      window.clearTimeout(jumpLockTimerRef.current);
+    }
+    jumpLockTimerRef.current = window.setTimeout(() => {
+      clearHeadingJumpLock();
+    }, 1500);
 
     setActiveHeadingId(id);
     element.scrollIntoView({ behavior: "smooth", block: "start" });
@@ -388,13 +394,6 @@ export default function App() {
               />
             </div>
 
-            <div className="list-header">
-              <span>板块</span>
-              <strong>
-                {filteredTree.length}/{visiblePageIds.length}
-              </strong>
-            </div>
-
             <nav className="category-tree" aria-label="知识点分层导航">
               {visiblePageIds.length === 0 ? (
                 <p className="empty">没有匹配内容，请调整关键词。</p>
@@ -412,7 +411,7 @@ export default function App() {
                 </header>
 
                 <article className="markdown-body">
-                  <ReactMarkdown components={markdownComponents}>{selectedPage.content}</ReactMarkdown>
+                  <ReactMarkdown>{selectedPage.content}</ReactMarkdown>
                 </article>
               </>
             ) : (
