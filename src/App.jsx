@@ -1,11 +1,64 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { Children, isValidElement, useEffect, useMemo, useRef, useState } from "react";
 import ReactMarkdown from "react-markdown";
+import rehypeKatex from "rehype-katex";
+import remarkMath from "remark-math";
 import { wikiCatalog } from "./data/wikiCatalog";
 import { wikiPages } from "./data/wikiPages";
+import collaborationGuidelinesContent from "./content/collaboration/collaboration-guidelines.md?raw";
 
 const developmentOrganizations = ["同济大学业余无线电协会", "杭州市艮山中学业余无线电社"];
 const developers = ["BH4HVT", "BH4GZK"];
 const contributors = ["BG5EVL", "BH8RAK"];
+
+const collaborationPage = {
+  id: "collaboration-guidelines",
+  title: "Ham Wiki文章创作规则与参考模板",
+  content: String(collaborationGuidelinesContent).trim()
+};
+
+function CopyablePreBlock({ children, ...props }) {
+  const [copied, setCopied] = useState(false);
+  const firstChild = Children.toArray(children)[0];
+  const rawCode = isValidElement(firstChild) ? firstChild.props.children : "";
+  const codeText = String(rawCode ?? "").replace(/\n$/, "");
+
+  async function copyCode() {
+    try {
+      if (navigator.clipboard?.writeText) {
+        await navigator.clipboard.writeText(codeText);
+      } else {
+        const textArea = document.createElement("textarea");
+        textArea.value = codeText;
+        textArea.setAttribute("readonly", "");
+        textArea.style.position = "fixed";
+        textArea.style.opacity = "0";
+        document.body.appendChild(textArea);
+        textArea.select();
+        document.execCommand("copy");
+        textArea.remove();
+      }
+
+      setCopied(true);
+      window.setTimeout(() => setCopied(false), 1200);
+    } catch {
+      setCopied(false);
+    }
+  }
+
+  return (
+    <div className="markdown-code-block">
+      <button
+        type="button"
+        className={copied ? "copy-code-btn copied" : "copy-code-btn"}
+        onClick={copyCode}
+        aria-label="复制代码"
+      >
+        {copied ? "已复制" : "复制"}
+      </button>
+      <pre {...props}>{children}</pre>
+    </div>
+  );
+}
 
 function toHeadingId(text) {
   const normalized = text
@@ -130,6 +183,19 @@ export default function App() {
 
   const visiblePageIds = useMemo(() => collectLeafPageIds(filteredTree, []), [filteredTree]);
 
+  const markdownComponents = useMemo(
+    () => ({
+      pre({ children, ...props }) {
+        return (
+          <CopyablePreBlock {...props}>
+            {children}
+          </CopyablePreBlock>
+        );
+      }
+    }),
+    []
+  );
+
   useEffect(() => {
     if (!visiblePageIds.includes(selectedPageId)) {
       setSelectedPageId(visiblePageIds[0] || "");
@@ -137,6 +203,10 @@ export default function App() {
   }, [visiblePageIds, selectedPageId]);
 
   const selectedPage = pageById.get(selectedPageId) || pageById.get(visiblePageIds[0]) || null;
+  const isWikiView = activeView === "wiki";
+  const isCollaborationView = activeView === "collaboration";
+  const hasArticleTocView = isWikiView || isCollaborationView;
+  const currentArticle = isWikiView ? selectedPage : isCollaborationView ? collaborationPage : null;
 
   useEffect(() => {
     return () => {
@@ -145,12 +215,12 @@ export default function App() {
   }, []);
 
   useEffect(() => {
-    if (activeView !== "wiki") {
+    if (!hasArticleTocView) {
       clearHeadingJumpLock();
       return;
     }
 
-    if (!selectedPage) {
+    if (!currentArticle) {
       clearHeadingJumpLock();
       setArticleHeadings([]);
       setActiveHeadingId("");
@@ -226,7 +296,7 @@ export default function App() {
     });
 
     return () => observer.disconnect();
-  }, [activeView, selectedPageId, selectedPage?.content]);
+  }, [hasArticleTocView, currentArticle?.id, currentArticle?.content]);
 
   function toggleNode(nodeId) {
     setExpandedNodes((current) => {
@@ -308,6 +378,31 @@ export default function App() {
     element.scrollIntoView({ behavior: "smooth", block: "start" });
   }
 
+  const tocPanel = (
+    <aside className="toc panel" aria-label="文章标题导航">
+      {articleHeadings.length === 0 ? (
+        <p className="empty">当前页面暂无可导航的小节标题。</p>
+      ) : (
+        <nav className="toc-list">
+          {articleHeadings.map((heading) => (
+            <button
+              key={heading.id}
+              type="button"
+              className={
+                activeHeadingId === heading.id
+                  ? `toc-item level-${heading.level} active`
+                  : `toc-item level-${heading.level}`
+              }
+              onClick={() => jumpToHeading(heading.id)}
+            >
+              {heading.text}
+            </button>
+          ))}
+        </nav>
+      )}
+    </aside>
+  );
+
   return (
     <div className="site-shell">
       <header className="top-nav panel">
@@ -329,6 +424,13 @@ export default function App() {
             onClick={() => setActiveView("wiki")}
           >
             考点汇总与解析
+          </button>
+          <button
+            type="button"
+            className={activeView === "collaboration" ? "nav-btn active" : "nav-btn"}
+            onClick={() => setActiveView("collaboration")}
+          >
+            协作规范
           </button>
         </nav>
       </header>
@@ -376,7 +478,7 @@ export default function App() {
             </div>
           </section>
         </main>
-      ) : (
+      ) : activeView === "wiki" ? (
         <div className="app-shell">
           <aside className="sidebar panel">
             <div className="brand-block">
@@ -411,7 +513,13 @@ export default function App() {
                 </header>
 
                 <article className="markdown-body">
-                  <ReactMarkdown>{selectedPage.content}</ReactMarkdown>
+                  <ReactMarkdown
+                    remarkPlugins={[remarkMath]}
+                    rehypePlugins={[rehypeKatex]}
+                    components={markdownComponents}
+                  >
+                    {selectedPage.content}
+                  </ReactMarkdown>
                 </article>
               </>
             ) : (
@@ -422,28 +530,27 @@ export default function App() {
             )}
           </main>
 
-          <aside className="toc panel" aria-label="文章标题导航">
-            {articleHeadings.length === 0 ? (
-              <p className="empty">当前页面暂无可导航的小节标题。</p>
-            ) : (
-              <nav className="toc-list">
-                {articleHeadings.map((heading) => (
-                  <button
-                    key={heading.id}
-                    type="button"
-                    className={
-                      activeHeadingId === heading.id
-                        ? `toc-item level-${heading.level} active`
-                        : `toc-item level-${heading.level}`
-                    }
-                    onClick={() => jumpToHeading(heading.id)}
-                  >
-                    {heading.text}
-                  </button>
-                ))}
-              </nav>
-            )}
-          </aside>
+          {tocPanel}
+        </div>
+      ) : (
+        <div className="collaboration-shell">
+          <main className="content panel" ref={contentRef}>
+            <header className="content-header">
+              <h2>{collaborationPage.title}</h2>
+            </header>
+
+            <article className="markdown-body">
+              <ReactMarkdown
+                remarkPlugins={[remarkMath]}
+                rehypePlugins={[rehypeKatex]}
+                components={markdownComponents}
+              >
+                {collaborationPage.content}
+              </ReactMarkdown>
+            </article>
+          </main>
+
+          {tocPanel}
         </div>
       )}
     </div>

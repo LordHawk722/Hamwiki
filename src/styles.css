@@ -179,11 +179,19 @@ body {
   margin-top: 4px;
 }
 
-.app-shell {
+.app-shell,
+.collaboration-shell {
   width: 100%;
   display: grid;
-  grid-template-columns: minmax(260px, 320px) minmax(0, 1fr) minmax(220px, 280px);
   gap: 18px;
+}
+
+.app-shell {
+  grid-template-columns: minmax(260px, 320px) minmax(0, 1fr) minmax(220px, 280px);
+}
+
+.collaboration-shell {
+  grid-template-columns: minmax(0, 1fr) minmax(220px, 280px);
 }
 
 .panel {
@@ -422,6 +430,63 @@ body {
   padding: 0.1em 0.35em;
 }
 
+.markdown-code-block {
+  position: relative;
+  margin: 1rem 0;
+}
+
+.copy-code-btn {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  border: 1px solid rgba(236, 244, 255, 0.35);
+  border-radius: 8px;
+  background: rgba(236, 244, 255, 0.14);
+  color: #ecf4ff;
+  padding: 4px 10px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 180ms ease, border-color 180ms ease, transform 180ms ease;
+}
+
+.copy-code-btn:hover {
+  background: rgba(236, 244, 255, 0.24);
+  border-color: rgba(236, 244, 255, 0.55);
+}
+
+.copy-code-btn:active {
+  transform: translateY(1px);
+}
+
+.copy-code-btn.copied {
+  background: rgba(31, 111, 102, 0.36);
+  border-color: rgba(177, 243, 235, 0.7);
+}
+
+.markdown-body pre {
+  margin: 1rem 0;
+  padding: 12px 14px;
+  border-radius: 12px;
+  border: 1px solid rgba(31, 111, 102, 0.26);
+  background: #162230;
+  color: #ecf4ff;
+  overflow-x: auto;
+}
+
+.markdown-body .markdown-code-block pre {
+  margin: 0;
+  padding-top: 42px;
+}
+
+.markdown-body pre code {
+  background: transparent;
+  color: inherit;
+  padding: 0;
+  border-radius: 0;
+  font-family: "Cascadia Code", "Consolas", "SFMono-Regular", monospace;
+}
+
 .markdown-body blockquote {
   margin: 1rem 0;
   padding: 0.2rem 0.9rem;
@@ -491,6 +556,10 @@ body {
     grid-template-columns: minmax(250px, 320px) minmax(0, 1fr);
   }
 
+  .collaboration-shell {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
   .toc {
     grid-column: 1 / -1;
     max-height: 280px;
@@ -524,6 +593,10 @@ body {
   }
 
   .app-shell {
+    grid-template-columns: 1fr;
+  }
+
+  .collaboration-shell {
     grid-template-columns: 1fr;
   }
 
