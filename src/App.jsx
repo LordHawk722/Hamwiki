@@ -77,6 +77,10 @@ function getHeadingText(rawText) {
     .trim();
 }
 
+function escapeRegExp(text) {
+  return text.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
 function includesKeyword(page, keyword) {
   const normalizedKeyword = keyword.trim().toLowerCase();
   if (!normalizedKeyword) {
@@ -154,6 +158,9 @@ function nodeContainsPage(node, targetPageId) {
 export default function App() {
   const [activeView, setActiveView] = useState("home");
   const [keyword, setKeyword] = useState("");
+  const [articleKeyword, setArticleKeyword] = useState("");
+  const [articleMatchElements, setArticleMatchElements] = useState([]);
+  const [activeArticleMatchIndex, setActiveArticleMatchIndex] = useState(-1);
   const [selectedPageId, setSelectedPageId] = useState(wikiPages[0]?.id || "");
   const [expandedNodes, setExpandedNodes] = useState(() => collectExpandableIds(wikiCatalog));
   const [articleHeadings, setArticleHeadings] = useState([]);
@@ -201,6 +208,10 @@ export default function App() {
       setSelectedPageId(visiblePageIds[0] || "");
     }
   }, [visiblePageIds, selectedPageId]);
+
+  useEffect(() => {
+    setArticleKeyword("");
+  }, [selectedPageId]);
 
   const selectedPage = pageById.get(selectedPageId) || pageById.get(visiblePageIds[0]) || null;
   const isWikiView = activeView === "wiki";
@@ -378,6 +389,119 @@ export default function App() {
     element.scrollIntoView({ behavior: "smooth", block: "start" });
   }
 
+  useEffect(() => {
+    const contentElement = contentRef.current?.querySelector(".markdown-body");
+
+    if (!contentElement) {
+      setArticleMatchElements([]);
+      setActiveArticleMatchIndex(-1);
+      return;
+    }
+
+    const existingMarks = contentElement.querySelectorAll("mark.article-hit");
+    existingMarks.forEach((mark) => {
+      const parent = mark.parentNode;
+      if (!parent) {
+        return;
+      }
+
+      parent.replaceChild(document.createTextNode(mark.textContent || ""), mark);
+      parent.normalize();
+    });
+
+    const normalizedKeyword = articleKeyword.trim();
+    if (!isWikiView || !selectedPage || !normalizedKeyword) {
+      setArticleMatchElements([]);
+      setActiveArticleMatchIndex(-1);
+      return;
+    }
+
+    const matcher = new RegExp(escapeRegExp(normalizedKeyword), "gi");
+    const walker = document.createTreeWalker(contentElement, NodeFilter.SHOW_TEXT, {
+      acceptNode(node) {
+        if (!node.nodeValue?.trim()) {
+          return NodeFilter.FILTER_REJECT;
+        }
+
+        const parent = node.parentElement;
+        if (!parent || parent.closest("pre, code, mark, script, style")) {
+          return NodeFilter.FILTER_REJECT;
+        }
+
+        return NodeFilter.FILTER_ACCEPT;
+      }
+    });
+
+    const textNodes = [];
+    while (walker.nextNode()) {
+      textNodes.push(walker.currentNode);
+    }
+
+    const nextMatches = [];
+    textNodes.forEach((textNode) => {
+      const sourceText = textNode.nodeValue || "";
+      matcher.lastIndex = 0;
+
+      let match = matcher.exec(sourceText);
+      if (!match) {
+        return;
+      }
+
+      const fragment = document.createDocumentFragment();
+      let lastIndex = 0;
+
+      while (match) {
+        const start = match.index;
+        const end = start + match[0].length;
+
+        if (start > lastIndex) {
+          fragment.appendChild(document.createTextNode(sourceText.slice(lastIndex, start)));
+        }
+
+        const mark = document.createElement("mark");
+        mark.className = "article-hit";
+        mark.textContent = sourceText.slice(start, end);
+        fragment.appendChild(mark);
+        nextMatches.push(mark);
+
+        lastIndex = end;
+        match = matcher.exec(sourceText);
+      }
+
+      if (lastIndex < sourceText.length) {
+        fragment.appendChild(document.createTextNode(sourceText.slice(lastIndex)));
+      }
+
+      textNode.parentNode?.replaceChild(fragment, textNode);
+    });
+
+    setArticleMatchElements(nextMatches);
+    setActiveArticleMatchIndex(nextMatches.length > 0 ? 0 : -1);
+  }, [articleKeyword, isWikiView, selectedPage]);
+
+  useEffect(() => {
+    articleMatchElements.forEach((element, index) => {
+      element.classList.toggle("article-hit-active", index === activeArticleMatchIndex);
+    });
+
+    const activeElement = articleMatchElements[activeArticleMatchIndex];
+    if (activeElement) {
+      activeElement.scrollIntoView({ behavior: "smooth", block: "center" });
+    }
+  }, [articleMatchElements, activeArticleMatchIndex]);
+
+  function jumpToArticleMatch(step) {
+    if (articleMatchElements.length === 0) {
+      return;
+    }
+
+    setActiveArticleMatchIndex((currentIndex) => {
+      const nextIndex = currentIndex + step;
+      const total = articleMatchElements.length;
+      return (nextIndex % total + total) % total;
+    });
+  }
+
   const tocPanel = (
     <aside className="toc panel" aria-label="文章标题导航">
       {articleHeadings.length === 0 ? (
@@ -510,6 +634,47 @@ export default function App() {
               <>
                 <header className="content-header">
                   <h2>{selectedPage.title}</h2>
+
+                  <div className="article-search-row" aria-label="文内搜索">
+                    <input
+                      value={articleKeyword}
+                      onChange={(event) => setArticleKeyword(event.target.value)}
+                      onKeyDown={(event) => {
+                        if (event.key !== "Enter") {
+                          return;
+                        }
+
+                        event.preventDefault();
+                        jumpToArticleMatch(event.shiftKey ? -1 : 1);
+                      }}
+                      placeholder="文内搜索：回车下一个，Shift+回车上一个"
+                      aria-label="文内搜索"
+                    />
+
+                    <button
+                      type="button"
+                      className="article-search-btn"
+                      onClick={() => jumpToArticleMatch(-1)}
+                      disabled={articleMatchElements.length === 0}
+                    >
+                      上一个
+                    </button>
+
+                    <button
+                      type="button"
+                      className="article-search-btn"
+                      onClick={() => jumpToArticleMatch(1)}
+                      disabled={articleMatchElements.length === 0}
+                    >
+                      下一个
+                    </button>
+
+                    <span className="article-search-count">
+                      {articleMatchElements.length === 0
+                        ? "无匹配"
+                        : `${activeArticleMatchIndex + 1} / ${articleMatchElements.length}`}
+                    </span>
+                  </div>
                 </header>
 
                 <article className="markdown-body">
