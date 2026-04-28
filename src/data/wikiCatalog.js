@@ -4,7 +4,9 @@ export const wikiCatalog = [
     title: "法律法规",
     children: [
         { pageId: "cn-radio-control-regulations", title: "中华人民共和国无线电管制规定" },
-        { pageId: "cn-radio-management-regulations", title: "中华人民共和国无线电管理条例" }
+        { pageId: "cn-radio-management-regulations", title: "中华人民共和国无线电管理条例" },
+        { pageId: "cn-amateur-radio-station-management-measures", title: "业余无线电台管理办法" },
+        { pageId: "cn-radio-frequency-allocation-regulations", title: "中华人民共和国无线电频率划分规定" }
     ]
   },
   {

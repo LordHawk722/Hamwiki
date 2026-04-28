@@ -282,3 +282,7 @@
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;涉及广播电视的无线电管理，法律、行政法规另有规定的，依照其规定执行。
 
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;第八十五条　本条例自2016年12月1日起施行。
+
+---
+## 考题链接
+- [MC2-0001]()
