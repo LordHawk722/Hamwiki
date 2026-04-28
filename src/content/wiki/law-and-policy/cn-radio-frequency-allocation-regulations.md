@@ -16,5 +16,15 @@
 
 ---
 
+由于本规定篇幅过长，以下只列出和题目相关的内容，完整内容请参见附件。
+## 业余业务(amateur service)
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;供业余无线电爱好者进行自我训练、相互通信和技术研究的**无线电通信业务**。业余无线电爱好者系指经正式批准的、对无线电技术有兴趣的人，其兴趣纯系个人爱好而不涉及谋取利润。
+## 卫星业余业务(amateur-satellite service)
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;利用地球**卫星**上的**空间电台**开展与**业余业务**相同目的的**无线电通信业务**。
+## 业余电台(amateur station)
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;用于**业余业务**的电台。
+
+---
+
 ## 考题链接
 - [MC1-0004]()
