@@ -14,7 +14,7 @@ const contributors = ["BG5EVL", "BH8RAK"];
 
 const collaborationPage = {
   id: "collaboration-guidelines",
-  title: "Ham Wiki文章创作规则与参考模板",
+  title: "Ham Wiki 文章创作规则与参考模板",
   content: String(collaborationGuidelinesContent).trim()
 };
 
