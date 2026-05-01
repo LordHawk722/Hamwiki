@@ -20,6 +20,19 @@
 
 ## 第1章 无线电管理的术语与定义
 ### 1.1 一般术语 General terms
+
+#### 1.1.2 电信 telecommunication
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;利用有线、**无线电**、光或其他电磁系统所进行的符号、信号、文字、图像、声音或其他信息的传输、**发射**或接收。
+
+#### 1.1.4 无线电波或赫兹波 radio waves or hertzian waves
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;频率规定在 3000GHz 以下，不用人造波导而在空间传播的电磁波。
+
+#### 1.1.5 无线电通信 radiocommunication
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;利用**无线电波**的电信。
+
+#### 1.1.6 地面无线电通信 terrestrial radiocommunication
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;除**空间无线电通信**或**射电天文**以外的任何**无线电通信**。
+
 #### 1.1.8 无线电测定 radiodetermination
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;利用**无线电波**的传播特性测定目标的位置、速度和/或其他特性，或获得与这些参数有关的信息。
 #### 1.1.9 无线电导航 radionavigation
@@ -54,6 +67,13 @@
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;用标准符号标示的某**发射**的一组特性，例如主载波调制方式，调制信号，被发送信息的类型以及其他适用的信号特性。
 #### 1.6.4 单边带发射 single-sideband emission
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;只传送一个边带的调幅发射。
+
+### 1.7 频率共用 Frequency sharing
+#### 1.7.1 干扰 interference
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;由于一种或多种**发射、辐射**、感应或其组合所产生的无用能量对**无线电通信**系统的接收产生的影响，其表现为性能下降、误解、或信息丢失，若不存在这种无用能量，则此后果可以避免。
+
+#### 1.7.4 有害干扰 harmful interference
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;危害**无线电导航**或其他**安全业务**的正常运行，或严重地损害、阻碍、或一再阻断按规定正常开展的**无线电通信业务**的**干扰**。
 
 ## 第3章 无线电频率划分规定
 
@@ -94,3 +114,10 @@
 10. [MC2-0015]()
 11. [MC1-0016]()
 12. [MC1-0017]()
+13. [MC3-0018]()
+14. [MC2-0019]()
+15. [MC3-0020]()
+16. [MC1-0023]()
+17. [MC1-0024]()
+18. [MC1-0025]()
+19. [MC1-0026]()

@@ -4,6 +4,8 @@ import rehypeKatex from "rehype-katex";
 import remarkMath from "remark-math";
 import { wikiCatalog } from "./data/wikiCatalog";
 import { wikiPages } from "./data/wikiPages";
+import { preKnowledgeCatalog } from "./data/preKnowledgeCatalog";
+import { preKnowledgePages } from "./data/preKnowledgePages";
 import collaborationGuidelinesContent from "./content/collaboration/collaboration-guidelines.md?raw";
 
 const developmentOrganizations = ["同济大学业余无线电协会", "杭州市艮山中学业余无线电社"];
@@ -163,6 +165,8 @@ export default function App() {
   const [activeArticleMatchIndex, setActiveArticleMatchIndex] = useState(-1);
   const [selectedPageId, setSelectedPageId] = useState(wikiPages[0]?.id || "");
   const [expandedNodes, setExpandedNodes] = useState(() => collectExpandableIds(wikiCatalog));
+  const [preSelectedPageId, setPreSelectedPageId] = useState(preKnowledgePages[0]?.id || "");
+  const [preExpandedNodes, setPreExpandedNodes] = useState(() => collectExpandableIds(preKnowledgeCatalog));
   const [articleHeadings, setArticleHeadings] = useState([]);
   const [activeHeadingId, setActiveHeadingId] = useState("");
   const contentRef = useRef(null);
@@ -184,9 +188,15 @@ export default function App() {
     return new Map(wikiPages.map((page) => [page.id, page]));
   }, []);
 
+  const preKnowledgePageById = useMemo(() => {
+    return new Map(preKnowledgePages.map((page) => [page.id, page]));
+  }, []);
+
   const filteredTree = useMemo(() => {
     return filterCatalogNodes(wikiCatalog, pageById, keyword);
   }, [keyword, pageById]);
+
+  const preKnowledgeVisiblePageIds = useMemo(() => collectLeafPageIds(preKnowledgeCatalog, []), []);
 
   const visiblePageIds = useMemo(() => collectLeafPageIds(filteredTree, []), [filteredTree]);
 
@@ -210,14 +220,29 @@ export default function App() {
   }, [visiblePageIds, selectedPageId]);
 
   useEffect(() => {
+    if (!preKnowledgeVisiblePageIds.includes(preSelectedPageId)) {
+      setPreSelectedPageId(preKnowledgeVisiblePageIds[0] || "");
+    }
+  }, [preKnowledgeVisiblePageIds, preSelectedPageId]);
+
+  useEffect(() => {
     setArticleKeyword("");
   }, [selectedPageId]);
 
   const selectedPage = pageById.get(selectedPageId) || pageById.get(visiblePageIds[0]) || null;
+  const selectedPreKnowledgePage =
+    preKnowledgePageById.get(preSelectedPageId) || preKnowledgePageById.get(preKnowledgeVisiblePageIds[0]) || null;
   const isWikiView = activeView === "wiki";
   const isCollaborationView = activeView === "collaboration";
-  const hasArticleTocView = isWikiView || isCollaborationView;
-  const currentArticle = isWikiView ? selectedPage : isCollaborationView ? collaborationPage : null;
+  const isPreKnowledgeView = activeView === "preknowledge";
+  const hasArticleTocView = isWikiView || isCollaborationView || isPreKnowledgeView;
+  const currentArticle = isWikiView
+    ? selectedPage
+    : isCollaborationView
+      ? collaborationPage
+      : isPreKnowledgeView
+        ? selectedPreKnowledgePage
+        : null;
 
   useEffect(() => {
     return () => {
@@ -309,8 +334,8 @@ export default function App() {
     return () => observer.disconnect();
   }, [hasArticleTocView, currentArticle?.id, currentArticle?.content]);
 
-  function toggleNode(nodeId) {
-    setExpandedNodes((current) => {
+  function toggleNode(nodeId, setNodes) {
+    setNodes((current) => {
       if (current.includes(nodeId)) {
         return current.filter((item) => item !== nodeId);
       }
@@ -318,11 +343,11 @@ export default function App() {
     });
   }
 
-  function renderTreeNode(node, depth = 0) {
+  function renderTreeNode(node, state, depth = 0) {
     const isBranch = Array.isArray(node.children);
 
     if (!isBranch) {
-      const page = pageById.get(node.pageId);
+      const page = state.pageById.get(node.pageId);
       if (!page) {
         return null;
       }
@@ -331,8 +356,8 @@ export default function App() {
       return (
         <button
           key={node.pageId}
-          className={selectedPage?.id === page.id ? "tree-page-item active" : "tree-page-item"}
-          onClick={() => setSelectedPageId(page.id)}
+          className={state.selectedPage?.id === page.id ? "tree-page-item active" : "tree-page-item"}
+          onClick={() => state.onSelectPage(page.id)}
           type="button"
         >
           <span>{title}</span>
@@ -341,8 +366,8 @@ export default function App() {
     }
 
     const nodeId = node.id || node.title;
-    const isExpanded = expandedNodes.includes(nodeId);
-    const hasActivePage = nodeContainsPage(node, selectedPage?.id);
+    const isExpanded = state.expandedNodes.includes(nodeId);
+    const hasActivePage = nodeContainsPage(node, state.selectedPage?.id);
     const childCount = countLeafPages(node.children);
 
     return (
@@ -350,7 +375,7 @@ export default function App() {
         <button
           type="button"
           className={hasActivePage ? "tree-group-toggle active" : "tree-group-toggle"}
-          onClick={() => toggleNode(nodeId)}
+          onClick={() => toggleNode(nodeId, state.onToggleNodes)}
         >
           <span className="tree-group-title">
             <span className="tree-caret" aria-hidden="true">
@@ -363,7 +388,7 @@ export default function App() {
 
         {isExpanded ? (
           <div className={depth === 0 ? "tree-pages" : "tree-pages tree-pages-nested"}>
-            {node.children.map((child) => renderTreeNode(child, depth + 1))}
+            {node.children.map((child) => renderTreeNode(child, state, depth + 1))}
           </div>
         ) : null}
       </section>
@@ -544,6 +569,13 @@ export default function App() {
           </button>
           <button
             type="button"
+            className={activeView === "preknowledge" ? "nav-btn active" : "nav-btn"}
+            onClick={() => setActiveView("preknowledge")}
+          >
+            前置知识
+          </button>
+          <button
+            type="button"
             className={activeView === "wiki" ? "nav-btn active" : "nav-btn"}
             onClick={() => setActiveView("wiki")}
           >
@@ -602,6 +634,54 @@ export default function App() {
             </div>
           </section>
         </main>
+      ) : activeView === "preknowledge" ? (
+        <div className="preknowledge-shell">
+          <aside className="sidebar panel">
+            <div className="brand-block">
+              <h1>前置知识</h1>
+              <p className="muted">考试题目相关的基础学科知识</p>
+            </div>
+
+            <nav className="category-tree" aria-label="前置知识模块导航">
+              {preKnowledgeCatalog.map((node) =>
+                renderTreeNode(node, {
+                  selectedPage: selectedPreKnowledgePage,
+                  pageById: preKnowledgePageById,
+                  expandedNodes: preExpandedNodes,
+                  onToggleNodes: setPreExpandedNodes,
+                  onSelectPage: setPreSelectedPageId
+                })
+              )}
+            </nav>
+          </aside>
+
+          <main className="content panel" ref={contentRef}>
+            {selectedPreKnowledgePage ? (
+              <>
+                <header className="content-header">
+                  <h2>{selectedPreKnowledgePage.title}</h2>
+                </header>
+
+                <article className="markdown-body">
+                  <ReactMarkdown
+                    remarkPlugins={[remarkMath]}
+                    rehypePlugins={[rehypeKatex]}
+                    components={markdownComponents}
+                  >
+                    {selectedPreKnowledgePage.content}
+                  </ReactMarkdown>
+                </article>
+              </>
+            ) : (
+              <div className="empty-state">
+                <h2>暂无可展示条目</h2>
+                <p>请先新增前置知识页面数据。</p>
+              </div>
+            )}
+          </main>
+
+          {tocPanel}
+        </div>
       ) : activeView === "wiki" ? (
         <div className="app-shell">
           <aside className="sidebar panel">
@@ -624,7 +704,15 @@ export default function App() {
               {visiblePageIds.length === 0 ? (
                 <p className="empty">没有匹配内容，请调整关键词。</p>
               ) : (
-                filteredTree.map((node) => renderTreeNode(node))
+                filteredTree.map((node) =>
+                  renderTreeNode(node, {
+                    selectedPage,
+                    pageById,
+                    expandedNodes,
+                    onToggleNodes: setExpandedNodes,
+                    onSelectPage: setSelectedPageId
+                  })
+                )
               )}
             </nav>
           </aside>
