@@ -3,7 +3,7 @@ export const preKnowledgeCatalog = [
     id: "preknowledge-foundations",
     title: "地理",
     children: [
-      { pageId: "atmospheric-subdivision", title: "大气分层" }
+      { pageId: "atmospheric-subdivision", title: "大气分层与电离层" }
     ]
   },
   {
