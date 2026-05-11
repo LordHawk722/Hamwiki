@@ -113,6 +113,94 @@ body {
   color: #2a3650;
 }
 
+.home-cta {
+  margin: 25px 0 0 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  border: 1px solid rgba(31, 35, 52, 0.12);
+  border-radius: 20px;
+  padding: 18px 20px;
+  background:
+    linear-gradient(135deg, rgba(255, 255, 255, 0.82), rgba(255, 252, 245, 0.7)),
+    radial-gradient(circle at top right, rgba(240, 162, 42, 0.18), transparent 42%);
+  box-shadow: 0 18px 40px rgba(38, 46, 71, 0.12);
+}
+
+.home-cta-copy {
+  min-width: 0;
+}
+
+.home-cta-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: rgba(31, 111, 102, 0.12);
+  color: #1f6f66;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.home-cta-copy h2 {
+  margin: 10px 0 6px;
+  font-family: var(--font-cn);
+  font-size: clamp(1.1rem, 1.4vw, 1.38rem);
+}
+
+.home-cta-copy p {
+  margin: 0;
+  max-width: 760px;
+  font-size: 1rem;
+  line-height: 1.7;
+  color: #30415d;
+}
+
+.home-cta-button {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 18px;
+  border-radius: 999px;
+  border: 1px solid rgba(31, 111, 102, 0.35);
+  background: linear-gradient(135deg, #1f6f66, #2f897d);
+  color: #fff;
+  text-decoration: none;
+  font-weight: 700;
+  box-shadow: 0 12px 25px rgba(31, 111, 102, 0.24);
+  transition: transform 180ms ease, box-shadow 180ms ease, filter 180ms ease;
+}
+
+.home-cta-button:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 16px 30px rgba(31, 111, 102, 0.28);
+  filter: brightness(1.04);
+}
+
+.home-cta-button:focus-visible {
+  outline: none;
+  box-shadow:
+    0 0 0 3px rgba(240, 162, 42, 0.22),
+    0 16px 30px rgba(31, 111, 102, 0.28);
+}
+
+.home-cta-button-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.5rem;
+  height: 1.5rem;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.18);
+  font-size: 0.95rem;
+  line-height: 1;
+}
+
 .home-grid {
   margin-top: 20px;
   display: grid;
@@ -177,6 +265,23 @@ body {
 
 .home-team-card li + li {
   margin-top: 4px;
+}
+
+@media (max-width: 900px) {
+  .home-hero,
+  .home-cta {
+    margin-left: 0;
+  }
+
+  .home-cta {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .home-cta-button {
+    width: 100%;
+    justify-content: center;
+  }
 }
 
 .app-shell,
