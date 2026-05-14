@@ -10,8 +10,8 @@ export const preKnowledgeCatalog = [
     id: "preknowledge-practice",
     title: "物理",
     children: [
-      { pageId: "preknowledge-station-basics", title: "电路理论" },
-      { pageId: "preknowledge-terms", title: "电磁波" }
+      { pageId: "circuit-theory", title: "电路理论" },
+      { pageId: "electromagnetic-wave", title: "电磁波" }
     ]
   }
 ];

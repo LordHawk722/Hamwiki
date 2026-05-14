@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import ReactMarkdown from "react-markdown";
 import rehypeKatex from "rehype-katex";
+import remarkGfm from "remark-gfm";
 import remarkMath from "remark-math";
 import { wikiCatalog } from "./data/wikiCatalog";
 import { pageById } from './data/wikiPages'
@@ -569,7 +570,7 @@ export default function App() {
 
                 <article className="markdown-body">
                   <ReactMarkdown
-                    remarkPlugins={[remarkMath]}
+                    remarkPlugins={[remarkGfm, remarkMath]}
                     rehypePlugins={[rehypeKatex]}
                     components={markdownComponents}
                   >
@@ -674,7 +675,7 @@ export default function App() {
 
                 <article className="markdown-body">
                   <ReactMarkdown
-                    remarkPlugins={[remarkMath]}
+                    remarkPlugins={[remarkGfm, remarkMath]}
                     rehypePlugins={[rehypeKatex]}
                     components={markdownComponents}
                   >
@@ -704,7 +705,7 @@ export default function App() {
 
             <article className="markdown-body">
               <ReactMarkdown
-                remarkPlugins={[remarkMath]}
+                remarkPlugins={[remarkGfm, remarkMath]}
                 rehypePlugins={[rehypeKatex]}
                 components={markdownComponents}
               >
