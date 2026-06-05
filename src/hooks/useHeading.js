@@ -1,98 +1,91 @@
 import { useEffect, useRef, useState } from "react";
-import { useView } from './useView'
-import { usePage } from './usePage'
+import getHeadings from "../utils/getHeadings.js";
 
 export function useHeading() {
-  const { hasTocView, activeView } = useView()
-  const { selectedPageId } = usePage();
-
-  /**
-   * @type {[Array<HeadingNode>, Function]}
-   * articleHeadings - 文内标题对象数组
-   */
-  const [articleHeadings, setArticleHeadings] = useState([]);
-
-  /**
-   * @type {[string, Function]}
-   * activeHeadingId - 活动文内标题
-   */
+  const [content, setContent] = useState(null);
   const [activeHeadingId, setActiveHeadingId] = useState("");
+  const [articleHeadings, setArticleHeadings] = useState([]);
+  useEffect(() => {
+    if (!content) return;
+    const updateHeadings = () => {
+      const headings = getHeadings(content);
+      setArticleHeadings(headings);
+    };
+    updateHeadings();
+    const observer = new MutationObserver(updateHeadings);
+    observer.observe(content, { childList: true, subtree: true });
+    return () => observer.disconnect();
+  }, [content]);
 
-  /**
-   * @description 正在跳转到文内标题
-   * @type {React.RefObject<boolean>}
-   */
-  const isHeadingJumpingRef = useRef(false);
+  const jumpTargetRef = useRef("");
+  const jumpTimerRef = useRef(null);
 
-  /**
-   * @description 跳转目标标题的id
-   * @type {React.RefObject<string>}
-   */
-  const jumpTargetHeadingIdRef = useRef("");
-
-  /**
-   * @description 跳转计时器实例
-   * @type {React.RefObject<null>}
-   */
-  const jumpLockTimerRef = useRef(null);
-
-  /**
-   * @description 清除跳转操作
-   */
-  function clearHeadingJumpLock() {
-    if (jumpLockTimerRef.current) {
-      window.clearTimeout(jumpLockTimerRef.current);
-      jumpLockTimerRef.current = null;
+  function clearJump() {
+    if (jumpTimerRef.current) {
+      clearTimeout(jumpTimerRef.current);
+      jumpTimerRef.current = null;
     }
-
-    isHeadingJumpingRef.current = false;
-    jumpTargetHeadingIdRef.current = "";
+    jumpTargetRef.current = "";
   }
 
-  /**
-   * @description 跳转到目标文内标题
-   * @param {string} id - 目标文内标题id
-   */
   function jumpToHeading(id) {
     const element = document.getElementById(id);
-    if (!element) {
-      return;
-    }
-
-    isHeadingJumpingRef.current = true;
-    jumpTargetHeadingIdRef.current = id;
-    if (jumpLockTimerRef.current) {
-      window.clearTimeout(jumpLockTimerRef.current);
-    }
-    jumpLockTimerRef.current = window.setTimeout(() => {
-      clearHeadingJumpLock();
+    if (!element) return;
+    jumpTargetRef.current = id;
+    if (jumpTimerRef.current) clearTimeout(jumpTimerRef.current);
+    jumpTimerRef.current = setTimeout(() => {
+      clearJump();
     }, 1500);
-
-    setActiveHeadingId(id);
     element.scrollIntoView({ behavior: "smooth", block: "start" });
   }
 
-  /**
-   * 初始化
-   */
+  const observerRef = useRef(null);
   useEffect(() => {
-    clearHeadingJumpLock();
-  }, []);
+    setActiveHeadingId(articleHeadings[0]?.id);
 
-  useEffect(() => {
-    if (!hasTocView) clearHeadingJumpLock();
-  }, [hasTocView]);
+    const observer = new IntersectionObserver(
+      (entries) => {
+        const visibleEntry = entries
+          .filter((entry) => entry.isIntersecting)
+          .sort((a, b) => a.boundingClientRect.top - b.boundingClientRect.top)[0];
 
-  /**
-   *
-   */
-  useEffect(() => {
-    if (!selectedPageId) {
-      clearHeadingJumpLock();
-      setArticleHeadings([]);
-      setActiveHeadingId("");
+        if (visibleEntry?.target?.id) {
+          const visibleHeadingId = visibleEntry.target.id;
+          setActiveHeadingId(visibleHeadingId);
+        }
+      },
+      {
+        root: content ?? null,
+        rootMargin: "0px 0px -90% 0px",
+        threshold: 0
+      }
+    );
+    for (const heading of articleHeadings) {
+      const element = document.getElementById(heading.id);
+      if (element) {
+        observer.observe(element);
+      }
     }
-  }, [activeView, selectedPageId]) // 还要补充pre、collab的
+    observerRef.current = observer;
 
-  return { clearHeadingJumpLock, jumpToHeading, articleHeadings, setArticleHeadings, activeHeadingId, setActiveHeadingId, isHeadingJumpingRef }
+    return () => {
+      if (observerRef.current) {
+        observerRef.current.disconnect();
+        observerRef.current = null;
+      }
+    };
+  }, [articleHeadings]);
+
+  useEffect(() => {
+    return () => {
+      clearJump();
+    };
+  });
+
+  return {
+    setContent,
+    articleHeadings,
+    activeHeadingId,
+    jumpToHeading
+  };
 }

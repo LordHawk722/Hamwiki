@@ -1,4 +1,4 @@
-export const preKnowledgeCatalog = [
+const preknowledgeCatalog = [
   {
     id: "preknowledge-foundations",
     title: "地理",
@@ -15,3 +15,5 @@ export const preKnowledgeCatalog = [
     ]
   }
 ];
+
+export default preknowledgeCatalog;

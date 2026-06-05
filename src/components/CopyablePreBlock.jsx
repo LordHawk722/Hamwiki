@@ -1,6 +1,6 @@
 import { Children, isValidElement, useState } from 'react'
 
-export function CopyablePreBlock({ children, ...props }) {
+export default function CopyablePreBlock({ children, ...props }) {
   const [copied, setCopied] = useState(false);
   const firstChild = Children.toArray(children)[0];
   const rawCode = isValidElement(firstChild) ? firstChild.props.children : "";

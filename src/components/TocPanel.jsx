@@ -1,17 +1,14 @@
-/**
- * @description 右侧文内标题板
- * @param param0
- * @param param0.articleHeadings - 文内标题对象
- * @param param0.activeHeadingId - 当前文内标题
- * @param param0.jumpToHeading - 跳转到目标文内标题方法
- * @returns {JSX.Element}
- * @constructor
- */
-export function TocPanel({
-                           articleHeadings,
-                           activeHeadingId,
-                           jumpToHeading
-                         }) {
+import { useHeading } from "../hooks/index.js";
+import { useContext, useEffect } from "react";
+import { PageIdContext } from "../contexts/PageIdContext.js";
+
+export default function TocPanel({ contentRef }) {
+  const [pageId, setPageId] = useContext(PageIdContext);
+  const { setContent, articleHeadings, activeHeadingId, jumpToHeading } = useHeading();
+  useEffect(() => {
+    setContent(contentRef?.current);
+  }, [pageId]);
+
   return (
     <aside className="toc panel" aria-label="文章标题导航">
       {articleHeadings.length === 0 ? (

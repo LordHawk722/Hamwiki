@@ -285,15 +285,13 @@ body {
 }
 
 .app-shell,
-.preknowledge-shell,
 .collaboration-shell {
   width: 100%;
   display: grid;
   gap: 18px;
 }
 
-.app-shell,
-.preknowledge-shell {
+.app-shell {
   grid-template-columns: minmax(260px, 320px) minmax(0, 1fr) minmax(220px, 280px);
 }
 
@@ -745,8 +743,7 @@ body {
 }
 
 @media (max-width: 1200px) {
-  .app-shell,
-  .preknowledge-shell {
+  .app-shell {
     grid-template-columns: minmax(250px, 320px) minmax(0, 1fr);
   }
 
@@ -786,8 +783,7 @@ body {
     grid-template-columns: 1fr;
   }
 
-  .app-shell,
-  .preknowledge-shell {
+  .app-shell {
     grid-template-columns: 1fr;
   }
 

@@ -1,13 +1,17 @@
-import { includesKeyword } from './includesKeyword.js'
+import { includesKeyword } from "./includesKeyword.js";
 
-export function filterPageNodes(nodes, pageById, keyword) {
+/**
+ * @returns
+ */
+export function filterPageNodes(nodes, keyword, pageById) {
   return nodes.reduce((accumulator, node) => {
     if (Array.isArray(node.children)) {
-      const filteredChildren = filterPageNodes(node.children, pageById, keyword);
+      const filteredChildren = filterPageNodes(node.children, keyword, pageById);
       if (filteredChildren.length > 0) {
         accumulator.push({
           ...node,
-          children: filteredChildren
+          children: filteredChildren,
+          pageCount: filteredChildren.reduce((cnt, child) => cnt + child.pageCount, 0)
         });
       }
       return accumulator;
@@ -15,7 +19,7 @@ export function filterPageNodes(nodes, pageById, keyword) {
 
     const page = pageById.get(node.pageId);
     if (page && includesKeyword(page, keyword)) {
-      accumulator.push(node);
+      accumulator.push({ ...node, pageCount: 1 });
     }
     return accumulator;
   }, []);
