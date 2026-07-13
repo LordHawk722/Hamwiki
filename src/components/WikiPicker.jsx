@@ -1,5 +1,5 @@
 import useSearch from "../hooks/useSearch.js";
-import { createContext, useContext, useState } from "react";
+import { createContext, useContext, useEffect, useRef, useState } from "react";
 import { collectExpandableIds } from "../utils/index.js";
 import PickerNode from "./PickerNode.jsx";
 import { CategoryContext } from "../contexts/CategoryContext.jsx";
@@ -15,7 +15,16 @@ export default function WikiPicker({text}) {
    * @type {[string, Function]}
    * expandedNodes - wiki:当前展开节点id
    */
-  const [expandedNodes, setExpandedNodes] = useState(collectExpandableIds(filteredTree));
+  const [expandedNodes, setExpandedNodes] = useState([]);
+  const prevTreeRef = useRef(filteredTree);
+
+  // 当数据从空加载到有内容时，自动展开所有分组
+  useEffect(() => {
+    if (prevTreeRef.current.length === 0 && filteredTree.length > 0) {
+      setExpandedNodes(collectExpandableIds(filteredTree));
+    }
+    prevTreeRef.current = filteredTree;
+  }, [filteredTree]);
 
   return (
     <aside className="sidebar panel">
@@ -38,13 +47,13 @@ export default function WikiPicker({text}) {
         {filteredTree.length === 0
           ? (<p className="empty">没有匹配内容，请调整关键词。</p>)
           : (
-            <ExpandedNodesStateContext value={[expandedNodes, setExpandedNodes]}>
+            <ExpandedNodesStateContext.Provider value={[expandedNodes, setExpandedNodes]}>
               {filteredTree.map((node) => {
                 return (
                   <PickerNode key={node.id ?? node.pageId} node={node}/>
                 );
               })}
-            </ExpandedNodesStateContext>
+            </ExpandedNodesStateContext.Provider>
           )
         }
       </nav>

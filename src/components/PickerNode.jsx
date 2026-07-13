@@ -58,13 +58,13 @@ export default function PickerNode({ node }) {
 
       {isExpanded ? (
         <div className={depth === 0 ? "tree-pages" : "tree-pages tree-pages-nested"}>
-          <DepthContext value={depth + 1}>
+          <DepthContext.Provider value={depth + 1}>
             {node.children.map((child) => {
               return (
                 <PickerNode key={child.id ?? child.pageId} node={child}/>
               );
             })}
-          </DepthContext>
+          </DepthContext.Provider>
         </div>
       ) : null}
     </section>

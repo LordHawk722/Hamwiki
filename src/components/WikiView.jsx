@@ -28,15 +28,15 @@ export default function WikiView({ category }) {
 
   return (
     <div className="app-shell">
-      <CategoryContext value={category}>
+      <CategoryContext.Provider value={category}>
         <PagesProvider>
-          <PageIdContext value={[pageId, setPageId]}>
+          <PageIdContext.Provider value={[pageId, setPageId]}>
             <WikiPicker text={text}/>
             <WikiMain contentRef={contentRef}/>
             <TocPanel contentRef={contentRef}/>
-          </PageIdContext>
+          </PageIdContext.Provider>
         </PagesProvider>
-      </CategoryContext>
+      </CategoryContext.Provider>
     </div>
   );
 }
