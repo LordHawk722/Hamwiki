@@ -16,14 +16,17 @@ export default function WikiPicker({text}) {
    * expandedNodes - wiki:当前展开节点id
    */
   const [expandedNodes, setExpandedNodes] = useState([]);
-  const prevTreeRef = useRef(filteredTree);
+  const prevTreeLengthRef = useRef(filteredTree.length);
+  const reloadPendingRef = useRef(false);
 
   // 当数据从空加载到有内容时，自动展开所有分组
+  useEffect(() => { reloadPendingRef.current = true; }, [category]);
   useEffect(() => {
-    if (prevTreeRef.current.length === 0 && filteredTree.length > 0) {
+    if (reloadPendingRef || prevTreeLengthRef.current === 0 && filteredTree.length > 0) {
+      reloadPendingRef.current = false;
       setExpandedNodes(collectExpandableIds(filteredTree));
     }
-    prevTreeRef.current = filteredTree;
+    prevTreeLengthRef.current = filteredTree.length;
   }, [filteredTree]);
 
   return (
