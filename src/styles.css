@@ -496,6 +496,26 @@ body {
   font-size: clamp(1.55rem, 2vw, 2.2rem);
 }
 
+.question-tags-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 12px;
+}
+
+.question-tag {
+  display: inline-block;
+  padding: 2px 10px;
+  font-size: 0.8rem;
+  font-family: var(--font-mono, Consolas, monospace);
+  color: #2563eb;
+  background: #eff6ff;
+  border: 1px solid #bfdbfe;
+  border-radius: 12px;
+  -webkit-user-select: all;
+  user-select: all;
+}
+
 .article-search-row {
   display: flex;
   align-items: center;

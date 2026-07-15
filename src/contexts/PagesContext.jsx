@@ -34,12 +34,6 @@ export function PagesProvider({ children }) {
     };
   }, [category]);
 
-  if (state.error) {
-    console.error("[PagesContext] loadPages failed:", state.error);
-  } else {
-    console.log("[PagesContext] pages:", state.pages.length, "catalog:", state.catalog?.length, "isLoading:", state.isLoading);
-  }
-
   return (
     <PagesContext.Provider value={state}>
       {children}

@@ -143,6 +143,14 @@ export default function WikiMain({ contentRef }) {
           <header className="content-header">
             <h2>{page.title}</h2>
 
+            {page.questionIds?.length > 0 && (
+              <div className="question-tags-row">
+                {page.questionIds.map((qid) => (
+                  <span key={qid} className="question-tag">{qid}</span>
+                ))}
+              </div>
+            )}
+
             <div className="article-search-row" aria-label="文内搜索">
               <input
                 value={keyword}

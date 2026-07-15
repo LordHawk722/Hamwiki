@@ -4,7 +4,7 @@ export function includesKeyword(page, keyword) {
     return true;
   }
 
-  const content = [page.title, page.content].join(" ").toLowerCase();
+  const content = [page.title, page.content, ...(page.questionIds || [])].join(" ").toLowerCase();
 
   return content.includes(normalizedKeyword);
 }
