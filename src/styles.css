@@ -698,6 +698,11 @@ body {
   font-family: "Cascadia Code", "Consolas", "SFMono-Regular", monospace;
 }
 
+.markdown-body img {
+  max-width: 650px;
+  height: auto;
+}
+
 .markdown-body blockquote {
   margin: 1rem 0;
   padding: 0.2rem 0.9rem;
