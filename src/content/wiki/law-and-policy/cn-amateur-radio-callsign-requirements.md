@@ -1,5 +1,5 @@
 ---
-questionIds: [MC4-0079]
+questionIds: [MC4-0079, MC2-0080, MC4-0081, MC3-0082, MC3-0083, MC3-0084, MC1-0086]
 ---
 
 
