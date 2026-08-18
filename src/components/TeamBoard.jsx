@@ -1,7 +1,7 @@
 import TeamCard from './TeamCard.jsx'
 
 const developmentOrganizations = ['同济大学业余无线电协会', '杭州市艮山中学业余无线电社']
-const developers = ['BH4HVT', 'Rosalie1723', 'BH4GZK', 'Hello-world150']
+const developers = ['BH4HVT', 'Rosalie1723', 'BH4GZK', 'BH8HJY']
 const contributors = ['BG5EVL', 'BH8RAK']
 
 const teams = [
