@@ -37,5 +37,5 @@ $$
 >$$\frac{U}{R} = \frac{U}{R_1} + \frac{U}{R_2} + ... + \frac{U}{R_n}$$
 >得：
 >$$
-\frac{1}{R} = \frac{1}{R_1} + \frac{1}{R_2} + ... + \frac{1}{R_n}
-$$
+>\frac{1}{R} = \frac{1}{R_1} + \frac{1}{R_2} + ... + \frac{1}{R_n}
+>$$
