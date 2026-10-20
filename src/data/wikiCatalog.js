@@ -27,7 +27,12 @@ const wikiCatalog = [
         id: "antenna-systems",
         title: "天线系统",
         children: [
-          { pageId: "antenna-impedance-and-swr", title: "阻抗、驻波比与匹配" }
+          { pageId: "antenna-wavelength-and-size", title: "波长与天线尺寸" },
+          { pageId: "antenna-radiation", title: "天线如何辐射" },
+          { pageId: "antenna-impedance-and-swr", title: "阻抗、驻波比与匹配" },
+          { pageId: "antenna-gain-and-pattern", title: "增益、方向图与效率" },
+          { pageId: "antenna-polarization-and-erp", title: "极化与有效辐射功率" },
+          { pageId: "antenna-height-and-takeoff", title: "高度、地面与辐射仰角" }
         ]
       }
     ]
