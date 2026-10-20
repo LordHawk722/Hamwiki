@@ -22,6 +22,13 @@ const wikiCatalog = [
           { pageId: "electronics-foundation", title: "电子学基础" },
           { pageId: "antenna-feedline", title: "天线与馈线" }
         ]
+      },
+      {
+        id: "antenna-systems",
+        title: "天线系统",
+        children: [
+          { pageId: "antenna-impedance-and-swr", title: "阻抗、驻波比与匹配" }
+        ]
       }
     ]
   },
