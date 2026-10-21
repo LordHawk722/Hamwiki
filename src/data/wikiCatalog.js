@@ -19,8 +19,7 @@ const wikiCatalog = [
         id: "circuit-and-rf",
         title: "电路与射频",
         children: [
-          { pageId: "electronics-foundation", title: "电子学基础" },
-          { pageId: "antenna-feedline", title: "天线与馈线" }
+          { pageId: "electronics-foundation", title: "电子学基础" }
         ]
       },
       {
@@ -32,7 +31,17 @@ const wikiCatalog = [
           { pageId: "antenna-impedance-and-swr", title: "阻抗、驻波比与匹配" },
           { pageId: "antenna-gain-and-pattern", title: "增益、方向图与效率" },
           { pageId: "antenna-polarization-and-erp", title: "极化与有效辐射功率" },
-          { pageId: "antenna-height-and-takeoff", title: "高度、地面与辐射仰角" }
+          { pageId: "antenna-height-and-takeoff", title: "高度、地面与辐射仰角" },
+          { pageId: "feedline-and-coax", title: "传输线与同轴电缆" },
+          { pageId: "balun-and-common-mode", title: "巴伦与共模电流" },
+          { pageId: "atu-and-measurement", title: "天调与驻波测量" },
+          { pageId: "wire-antennas", title: "线天线" },
+          { pageId: "vertical-antennas", title: "垂直天线与地网" },
+          { pageId: "directional-antennas", title: "定向天线与八木" },
+          { pageId: "antennas-in-limited-space", title: "空间受限时的天线" },
+          { pageId: "antenna-installation-safety", title: "架设、防雷与安全" },
+          { pageId: "antenna-selection-and-troubleshooting", title: "选型与故障排查" },
+          { pageId: "antenna-terms", title: "天线术语与缩语" }
         ]
       }
     ]
